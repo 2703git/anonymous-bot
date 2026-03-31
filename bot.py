@@ -3,8 +3,8 @@ from flask import Flask, request
 import telebot
 
 # Get token and chat ID from Render Environment Variables
-TOKEN = os.environ.get("8777170699:AAEt8qddcDCeW3qCn4JpEKmfi6k7oOJg9LA")
-YOUR_CHAT_ID = int(os.environ.get("5356823467"))
+TOKEN = os.environ.get("BOT_TOKEN")
+YOUR_CHAT_ID = int(os.environ.get("YOUR_CHAT_ID"))
 
 # Safety check
 if not TOKEN or not YOUR_CHAT_ID:
