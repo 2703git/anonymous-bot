@@ -2,13 +2,17 @@ import os
 from flask import Flask, request
 import telebot
 
-TOKEN = os.environ.get("8777170699:AAEt8qddcDCeW3qCn4JpEKmfi6k7oOJg9LA")          # We'll add this on Render
-YOUR_CHAT_ID = int(os.environ.get("5356823467"))   # We'll add this too
+# Get token and chat ID from Render Environment Variables
+TOKEN = os.environ.get("8777170699:AAEt8qddcDCeW3qCn4JpEKmfi6k7oOJg9LA")
+YOUR_CHAT_ID = int(os.environ.get("5356823467"))
+
+# Safety check
+if not TOKEN or not YOUR_CHAT_ID:
+    raise ValueError("BOT_TOKEN and YOUR_CHAT_ID must be set in Render Environment Variables!")
 
 bot = telebot.TeleBot(TOKEN, threaded=False)
 app = Flask(__name__)
 
-# Store mapping for replies
 message_mapping = {}
 
 @app.route('/' + TOKEN, methods=['POST'])
@@ -18,17 +22,17 @@ def webhook():
     bot.process_new_updates([update])
     return "OK", 200
 
-# Welcome message
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    bot.reply_to(message, "👋 Hello!\n\nSend any message, question, or confession.\nIt will be forwarded anonymously.\n\nYou can also send photos, voice, etc.")
+    bot.reply_to(message, "👋 Hello!\n\n"
+                          "Send any message, question or confession.\n"
+                          "It will be sent to the owner anonymously.")
 
-# Main handler
 @bot.message_handler(func=lambda m: True)
 def handle_all(message):
     user_id = message.chat.id
 
-    # Reply from you (owner)
+    # If message is from you (owner) - replying to user
     if user_id == YOUR_CHAT_ID:
         if message.reply_to_message and message.reply_to_message.message_id in message_mapping:
             original_user = message_mapping[message.reply_to_message.message_id]
@@ -38,7 +42,7 @@ def handle_all(message):
             except:
                 bot.send_message(YOUR_CHAT_ID, "❌ Failed to send reply.")
         else:
-            bot.send_message(YOUR_CHAT_ID, "Reply to a forwarded message to answer.")
+            bot.send_message(YOUR_CHAT_ID, "Please reply directly to a forwarded message.")
         return
 
     # Message from normal user
@@ -49,13 +53,9 @@ def handle_all(message):
     except:
         bot.reply_to(message, "❌ Error occurred.")
 
-# Set webhook when the app starts
 @app.route("/")
-def set_webhook():
-    bot.remove_webhook()
-    webhook_url = f"https://{os.environ.get('RENDER_EXTERNAL_HOSTNAME')}/{TOKEN}"
-    bot.set_webhook(url=webhook_url)
-    return f"Webhook set to: {webhook_url}"
+def home():
+    return "Anonymous Bot is running on Render!"
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
